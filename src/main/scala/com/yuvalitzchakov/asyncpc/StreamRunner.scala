@@ -25,8 +25,7 @@ object StreamRunner extends StreamApp[IO] {
       args: List[String],
       requestShutdown: IO[Unit]): fs2.Stream[IO, StreamApp.ExitCode] = {
 
-    val producerConsumerConfig
-      : Either[ConfigReaderFailures, ProducerConsumerConfiguration] =
+    val producerConsumerConfig: Either[ConfigReaderFailures, ProducerConsumerConfiguration] =
       loadConfig[ProducerConsumerConfiguration]("producer-consumer")
 
     val eventTopic = createOutputTopic[IO]()
@@ -58,23 +57,19 @@ object StreamRunner extends StreamApp[IO] {
         println(configError)
         fs2.Stream.emit(ExitCode.Error)
       case Right(resStream) =>
-        (resStream concurrently serverStream).drain >> fs2.Stream.emit(
-          ExitCode.Success)
+        (resStream concurrently serverStream).drain >> fs2.Stream.emit(ExitCode.Success)
     }
   }
 
-  def createOutputTopic[F[_]: Concurrent]()
-    : fs2.Stream[F, Topic[F, Option[Event]]] = {
+  def createOutputTopic[F[_]: Concurrent](): fs2.Stream[F, Topic[F, Option[Event]]] = {
     fs2.Stream.eval(fs2.async.topic[F, Option[Event]](None))
   }
 
-  def addPublisher[F[_]](topic: Topic[F, Option[Event]],
-                         event: Event): fs2.Stream[F, Unit] = {
+  def addPublisher[F[_]](topic: Topic[F, Option[Event]], event: Event): fs2.Stream[F, Unit] = {
     fs2.Stream.emit(event.some).covary[F].repeat.to(topic.publish)
   }
 
-  def addSubscriber[F[_]](
-      topic: Topic[F, Option[Event]]): fs2.Stream[F, Option[Event]] = {
+  def addSubscriber[F[_]](topic: Topic[F, Option[Event]]): fs2.Stream[F, Option[Event]] = {
     topic.subscribe(10)
   }
 
@@ -84,8 +79,7 @@ object StreamRunner extends StreamApp[IO] {
         writeStorage.get.map(
           vec =>
             vec
-              .map(event =>
-                s"Event Type: ${event.eventType}, Data: ${event.data}")
+              .map(event => s"Event Type: ${event.eventType}, Data: ${event.data}")
               .mkString("\n")))
 
     case GET -> Root / "groupedevents" => Ok("yes")
