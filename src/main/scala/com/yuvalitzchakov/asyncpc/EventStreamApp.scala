@@ -6,12 +6,13 @@ import io.circe.parser._
 /**
   * Created by Yuval.Itzchakov on 22/07/2018.
   */
-class EventStreamApp[F[_]](
-    dataGeneratorLocation: String,
-    eventStorageConfig: EventStorageConfiguration,
-    eventWriterStorage: EventWriterStorage[F],
-    eventReaderStorage: EventReaderStorage[F])(implicit F: ConcurrentEffect[F]) {
-  def program: fs2.Stream[F, Event] = {
+object EventStreamApp {
+  def program[F[_]](
+      dataGeneratorLocation: String,
+      eventStorageConfig: EventStorageConfiguration,
+      eventWriterStorage: EventWriterStorage[F],
+      eventReaderStorage: EventReaderStorage[F])(
+      implicit F: ConcurrentEffect[F]): fs2.Stream[F, Event] = {
     EventSource
       .stdinSource[F](dataGeneratorLocation)
       .map(decode[Event])

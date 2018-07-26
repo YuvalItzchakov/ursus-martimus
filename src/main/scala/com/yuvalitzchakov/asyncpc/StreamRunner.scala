@@ -48,11 +48,8 @@ object StreamRunner extends StreamApp[IO] {
 
     (eventWriterStorage, eventReaderStorage).tupled.map {
       case (eventWriter, eventReader) =>
-        val eventStreamApp = new EventStreamApp[IO](
-          dataGeneratorLocation,
-          eventStorageConfig,
-          eventWriter,
-          eventReader)
+        val eventStreamApp = EventStreamApp
+          .program[IO](dataGeneratorLocation, eventStorageConfig, eventWriter, eventReader)
 
         val eventsHttpService = new EventsHttpService[IO]
         val eventServer = eventsHttpService.httpService(eventReader)
@@ -60,7 +57,7 @@ object StreamRunner extends StreamApp[IO] {
         val serverStream =
           BlazeBuilder[IO].bindHttp(8080, "0.0.0.0").mountService(eventServer).serve
 
-        (eventStreamApp.program concurrently serverStream) >> fs2.Stream.emit(ExitCode.Success)
+        (eventStreamApp concurrently serverStream) >> fs2.Stream.emit(ExitCode.Success)
     }
   }
 }
