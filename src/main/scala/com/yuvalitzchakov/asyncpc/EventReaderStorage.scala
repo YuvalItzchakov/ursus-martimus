@@ -4,11 +4,30 @@ import cats.effect.Sync
 import cats.effect.concurrent.Ref
 
 /**
-  * Created by Yuval.Itzchakov on 26/07/2018.
+  * Reader storage is an abstraction over reading aggregated data over
+  * the events received from the data generation source.
+  * @tparam F The underlying effect
   */
 trait EventReaderStorage[F[_]] {
+
+  /**
+    * Adds an event value to the underlying storage
+    * @param event The event to add
+    */
   def put(event: Event): F[Unit]
+
+  /**
+    * Retrieves a key value pair where the key is the event type and
+    * the value is the count of occurrences of the event type thus far.
+    * @return Event type to count mapping
+    */
   def getEventCountByType: F[Map[String, Int]]
+
+  /**
+    * Retrieves a key value pair where the key is the event data and
+    * the value is the count of occurrences of the event type thus far.
+    * @return Event type to count mapping
+    */
   def getEventCountByData: F[Map[String, Int]]
 }
 

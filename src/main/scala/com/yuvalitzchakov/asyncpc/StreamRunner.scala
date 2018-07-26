@@ -11,9 +11,6 @@ import pureconfig._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-/**
-  * Created by Yuval.Itzchakov on 26/07/2018.
-  */
 object StreamRunner extends StreamApp[IO] {
   override def stream(
       args: List[String],
@@ -38,23 +35,34 @@ object StreamRunner extends StreamApp[IO] {
     }
   }
 
+  /**
+    * Bootstraps all necessary dependencies for running the event stream and the HTTP endpoint stream
+    * @param dataGeneratorLocation Location of the data generator executable
+    * @return A description of the stream to execute.
+    */
   def bootstrapStream(dataGeneratorLocation: String): IO[fs2.Stream[IO, ExitCode]] = {
     val eventStorageConfig: EventStorageConfiguration =
       loadConfig[EventStorageConfiguration]("event-storage")
         .getOrElse(EventStorageConfiguration(2048, 2048))
+
+    val httpServerConfig =
+      loadConfig[HttpServerConfiguration].getOrElse(HttpServerConfiguration("0.0.0.0", 8080))
 
     val eventWriterStorage = EventWriterStorage.create[IO]
     val eventReaderStorage = EventReaderStorage.create[IO]
 
     (eventWriterStorage, eventReaderStorage).tupled.map {
       case (eventWriter, eventReader) =>
-        val eventStreamApp = EventStreamApp
-          .program[IO](dataGeneratorLocation, eventStorageConfig, eventWriter, eventReader)
+        val eventStreamApp =
+          EventStreamApp[IO](dataGeneratorLocation, eventStorageConfig, eventWriter, eventReader)
 
         val eventsHttpService = new EventsHttpService[IO].httpService(eventReader)
 
         val serverStream =
-          BlazeBuilder[IO].bindHttp(8080, "0.0.0.0").mountService(eventsHttpService).serve
+          BlazeBuilder[IO]
+            .bindHttp(httpServerConfig.port, httpServerConfig.ip)
+            .mountService(eventsHttpService)
+            .serve
 
         (eventStreamApp concurrently serverStream) >> fs2.Stream.emit(ExitCode.Success)
     }

@@ -6,12 +6,12 @@ import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 
 /**
-  * Created by Yuval.Itzchakov on 26/07/2018.
+  * HTTP endpoint for supplying the aggregated events
   */
 class EventsHttpService[F[_]](implicit M: Monad[F], C: ConcurrentEffect[F]) extends Http4sDsl[F] {
   def httpService(readerStorage: EventReaderStorage[F]): HttpRoutes[F] =
     HttpRoutes.of[F] {
-      case GET -> Root / "eventsbydata" =>
+      case GET -> Root / "eventsbytype" =>
         Ok {
           M.map(readerStorage.getEventCountByType) { eventByType =>
             eventByType
@@ -20,7 +20,7 @@ class EventsHttpService[F[_]](implicit M: Monad[F], C: ConcurrentEffect[F]) exte
           }
         }
 
-      case GET -> Root / "eventsbytype" =>
+      case GET -> Root / "eventsbydata" =>
         Ok {
           M.map(readerStorage.getEventCountByData) { eventByType =>
             eventByType
