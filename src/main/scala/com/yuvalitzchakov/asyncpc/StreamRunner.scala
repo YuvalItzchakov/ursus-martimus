@@ -1,87 +1,66 @@
 package com.yuvalitzchakov.asyncpc
 
-import cats.effect.{Concurrent, IO}
+import java.nio.file.{Files, Paths}
+
+import cats.effect.IO
 import cats.implicits._
 import fs2.StreamApp
 import fs2.StreamApp.ExitCode
-import fs2.async.mutable.Topic
-import io.circe.parser._
-import org.http4s.HttpRoutes
-import org.http4s.dsl.io._
 import org.http4s.server.blaze.BlazeBuilder
 import pureconfig._
-import pureconfig.error.ConfigReaderFailures
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
-  * Created by Yuval.Itzchakov on 22/07/2018.
+  * Created by Yuval.Itzchakov on 26/07/2018.
   */
 object StreamRunner extends StreamApp[IO] {
-
-  val writeStorage: EventWriterStorage[IO] = EventWriterStorage.create[IO].unsafeRunSync()
-
   override def stream(
       args: List[String],
       requestShutdown: IO[Unit]): fs2.Stream[IO, StreamApp.ExitCode] = {
+    if (args.size != 1) {
+      println(s"""
+         |Invalid number of parameters to event stream runner. Please supply the data generator
+         |location either via program options in IDEA or via a parameter in the command line.
+         |Example usage: java -jar eventstorage <location of data generator>
+       """.stripMargin)
+      fs2.Stream.emit(ExitCode.Error)
+    } else {
+      val List(dataGeneratorPath) = args
+      val doesGeneratorExist =
+        Either.catchNonFatal(Files.exists(Paths.get(dataGeneratorPath))).getOrElse(false)
 
-    val producerConsumerConfig: Either[ConfigReaderFailures, ProducerConsumerConfiguration] =
-      loadConfig[ProducerConsumerConfiguration]("producer-consumer")
-
-    val eventTopic = createOutputTopic[IO]()
-//    val eventQueue =
-//      fs2.Stream.eval(fs2.async.unboundedQueue[IO, Option[Event]])
-//    val subscriber = eventTopic.flatMap(topic => topic.subscribe(10))
-    val sink = EventSink.writeStorageSink[IO](writeStorage).sink()
-
-    val res = producerConsumerConfig.map { config =>
-      for {
-        topic <- eventTopic
-        stream <- EventSource
-          .stdinSource[IO](config.dataGeneratorLocation)
-          .produceEventLines()
-          .map(decode[Event])
-          .collect { case Right(r) => r }
-          .map(event => { println(event); event })
-          .observeAsync(100)(sink)
-      } yield stream
-    }
-
-    val serv: HttpRoutes[IO] = httpService()
-
-    val serverStream =
-      BlazeBuilder[IO].bindHttp(8080, "0.0.0.0").mountService(serv).serve
-
-    res match {
-      case Left(configError) =>
-        println(configError)
+      if (!doesGeneratorExist) {
+        println(
+          s"Data generator is invalid. Please make sure the file exists at the specified location")
         fs2.Stream.emit(ExitCode.Error)
-      case Right(resStream) =>
-        (resStream concurrently serverStream).drain >> fs2.Stream.emit(ExitCode.Success)
+      } else bootstrapStream(dataGeneratorPath).unsafeRunSync().drain
     }
   }
 
-  def createOutputTopic[F[_]: Concurrent](): fs2.Stream[F, Topic[F, Option[Event]]] = {
-    fs2.Stream.eval(fs2.async.topic[F, Option[Event]](None))
-  }
+  def bootstrapStream(dataGeneratorLocation: String): IO[fs2.Stream[IO, ExitCode]] = {
+    val eventStorageConfig: EventStorageConfiguration =
+      loadConfig[EventStorageConfiguration]("event-storage")
+        .getOrElse(EventStorageConfiguration(2048, 2048))
 
-  def addPublisher[F[_]](topic: Topic[F, Option[Event]], event: Event): fs2.Stream[F, Unit] = {
-    fs2.Stream.emit(event.some).covary[F].repeat.to(topic.publish)
-  }
+    val eventWriterStorage = EventWriterStorage.create[IO]
+    val eventReaderStorage = EventReaderStorage.create[IO]
 
-  def addSubscriber[F[_]](topic: Topic[F, Option[Event]]): fs2.Stream[F, Option[Event]] = {
-    topic.subscribe(10)
-  }
+    (eventWriterStorage, eventReaderStorage).tupled.map {
+      case (eventWriter, eventReader) =>
+        val eventStreamApp = new EventStreamApp[IO](
+          dataGeneratorLocation,
+          eventStorageConfig,
+          eventWriter,
+          eventReader)
 
-  def httpService(): HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case GET -> Root / "eventcount" =>
-      Ok(
-        writeStorage.get.map(
-          vec =>
-            vec
-              .map(event => s"Event Type: ${event.eventType}, Data: ${event.data}")
-              .mkString("\n")))
+        val eventsHttpService = new EventsHttpService[IO]
+        val eventServer = eventsHttpService.httpService(eventReader)
 
-    case GET -> Root / "groupedevents" => Ok("yes")
+        val serverStream =
+          BlazeBuilder[IO].bindHttp(8080, "0.0.0.0").mountService(eventServer).serve
+
+        (eventStreamApp.program concurrently serverStream) >> fs2.Stream.emit(ExitCode.Success)
+    }
   }
 }
