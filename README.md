@@ -1,4 +1,4 @@
-Async producer consumer is a tool for processing synthetic data generated.
+Async producer consumer is a tool for processing synthetically generated data.
 
 ### Architecture:
 
@@ -70,7 +70,7 @@ the **application.conf**, and a restart to the service.
 #### Endpoints exposed:
 
 1. Event count by type - Represents events received so far, grouped by event type:
-    - URL :[IP:Port]/eventsbytype
+    - URL: [IP:Port]/eventsbytype
     - Verb: GET
     
 2. Event count by data - Represents events received so far, grouped by event data (the payload supplied by the event)
