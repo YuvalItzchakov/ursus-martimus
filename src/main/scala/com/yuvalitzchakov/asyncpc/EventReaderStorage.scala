@@ -1,6 +1,6 @@
 package com.yuvalitzchakov.asyncpc
 import cats.Functor
-import cats.effect.Concurrent
+import cats.effect.Sync
 import cats.effect.concurrent.Ref
 
 /**
@@ -13,7 +13,7 @@ trait EventReaderStorage[F[_]] {
 }
 
 object EventReaderStorage {
-  def create[F[_]: Concurrent](implicit F: Functor[F]): F[EventReaderStorage[F]] = {
+  def create[F[_]: Sync](implicit F: Functor[F]): F[EventReaderStorage[F]] = {
     F.map(Ref.of[F, EventState](EventState(Map.empty, Map.empty))) { ref =>
       new EventReaderStorage[F] {
         override def put(event: Event): F[Unit] = ref.update { eventState =>
@@ -27,8 +27,8 @@ object EventReaderStorage {
 
           val updatedEventByType = eventsByType
             .get(event.eventType)
-            .fold(eventsByData.updated(event.eventType, 1))(currentCount =>
-              eventsByData.updated(event.eventType, currentCount + 1))
+            .fold(eventsByType.updated(event.eventType, 1))(currentCount =>
+              eventsByType.updated(event.eventType, currentCount + 1))
 
           EventState(updatedEventByType, updatedEventByData)
         }

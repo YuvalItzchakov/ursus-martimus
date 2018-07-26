@@ -16,7 +16,7 @@ object EventStreamApp {
     EventSource
       .stdinSource[F](dataGeneratorLocation)
       .map(decode[Event])
-      .collect { case Right(r) => r }
+      .collect { case Right(event) => event }
       .observeAsync(eventStorageConfig.maxQueuedWriterElements)(
         EventSink.writeStorageSink(eventWriterStorage))
       .observeAsync(eventStorageConfig.maxQueuedReaderElements)(EventSink.readStorageSink(

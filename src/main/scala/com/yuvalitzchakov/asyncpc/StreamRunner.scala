@@ -51,11 +51,10 @@ object StreamRunner extends StreamApp[IO] {
         val eventStreamApp = EventStreamApp
           .program[IO](dataGeneratorLocation, eventStorageConfig, eventWriter, eventReader)
 
-        val eventsHttpService = new EventsHttpService[IO]
-        val eventServer = eventsHttpService.httpService(eventReader)
+        val eventsHttpService = new EventsHttpService[IO].httpService(eventReader)
 
         val serverStream =
-          BlazeBuilder[IO].bindHttp(8080, "0.0.0.0").mountService(eventServer).serve
+          BlazeBuilder[IO].bindHttp(8080, "0.0.0.0").mountService(eventsHttpService).serve
 
         (eventStreamApp concurrently serverStream) >> fs2.Stream.emit(ExitCode.Success)
     }

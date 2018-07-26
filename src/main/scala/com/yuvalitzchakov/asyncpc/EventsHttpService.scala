@@ -1,4 +1,5 @@
 package com.yuvalitzchakov.asyncpc
+
 import cats.Monad
 import cats.effect.ConcurrentEffect
 import org.http4s.HttpRoutes
@@ -10,7 +11,7 @@ import org.http4s.dsl.Http4sDsl
 class EventsHttpService[F[_]](implicit M: Monad[F], C: ConcurrentEffect[F]) extends Http4sDsl[F] {
   def httpService(readerStorage: EventReaderStorage[F]): HttpRoutes[F] =
     HttpRoutes.of[F] {
-      case GET -> Root / "eventcount" =>
+      case GET -> Root / "eventsbydata" =>
         Ok {
           M.map(readerStorage.getEventCountByType) { eventByType =>
             eventByType
@@ -19,7 +20,7 @@ class EventsHttpService[F[_]](implicit M: Monad[F], C: ConcurrentEffect[F]) exte
           }
         }
 
-      case GET -> Root / "groupedevents" =>
+      case GET -> Root / "eventsbytype" =>
         Ok {
           M.map(readerStorage.getEventCountByData) { eventByType =>
             eventByType
