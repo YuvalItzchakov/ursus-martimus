@@ -1,4 +1,4 @@
-Async producer consumer is a tool for processing synthetically generated data.
+Ursus martimus (A.K.A Polar Bear) is a tool for processing synthetically generated data in a streaming fashion.
 
 ### Architecture:
 
@@ -59,8 +59,18 @@ via the HTTP API.
 
 ### How to run the application:
 
-- sbt run [path to data generator]
-
+- Via sbt: sbt run [path to data generator]
+- Via IDEA: 
+    - Load the project
+    - Refresh sbt dependencies
+    - Go to "Edit Configuration"
+    - Select the `+` sign to add a new app (or just CTRL + SHIFT + F9 on the `StreamRunner` file):
+        - Main class: `com.yuvalitzchakov.asyncpc.StreamRunner`
+        - Program arguments: should be the path to your data generation executable
+        - Use classpath on module: `async-producer-consumer`
+        - JRE: should be 1.8 (Java 8)
+        
+    
 ### Querying the data API
 
 After running the service, the process starts an HTTP service which by default binds 
