@@ -11,6 +11,7 @@ import org.http4s.dsl.Http4sDsl
 class EventsHttpService[F[_]](implicit M: Monad[F], C: ConcurrentEffect[F]) extends Http4sDsl[F] {
   def httpService(readerStorage: EventReaderStorage[F]): HttpRoutes[F] =
     HttpRoutes.of[F] {
+      case GET -> Root => Ok("Welcome to the event counter service!")
       case GET -> Root / "eventsbytype" =>
         Ok {
           M.map(readerStorage.getEventCountByType) { eventByType =>
@@ -24,7 +25,7 @@ class EventsHttpService[F[_]](implicit M: Monad[F], C: ConcurrentEffect[F]) exte
         Ok {
           M.map(readerStorage.getEventCountByData) { eventByType =>
             eventByType
-              .map { case (eventData, count) => s"Event type: $eventData, Count: $count" }
+              .map { case (eventData, count) => s"Event data: $eventData, Count: $count" }
               .mkString("\n")
           }
         }

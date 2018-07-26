@@ -19,8 +19,9 @@ object StreamRunner extends StreamApp[IO] {
       println(s"""
          |Invalid number of parameters to event stream runner. Please supply the data generator
          |location either via program options in IDEA or via a parameter in the command line.
-         |Example usage: java -jar eventstorage <location of data generator>
+         |Example usage: sbt run <path to data generator>
        """.stripMargin)
+
       fs2.Stream.emit(ExitCode.Error)
     } else {
       val List(dataGeneratorPath) = args
@@ -29,7 +30,7 @@ object StreamRunner extends StreamApp[IO] {
 
       if (!doesGeneratorExist) {
         println(
-          s"Data generator is invalid. Please make sure the file exists at the specified location")
+          s"Data generator path $dataGeneratorPath is invalid. Please make sure the file exists at the specified location")
         fs2.Stream.emit(ExitCode.Error)
       } else bootstrapStream(dataGeneratorPath).unsafeRunSync().drain
     }
