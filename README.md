@@ -27,6 +27,10 @@ is an append only log. After committing to the log, events are published to the
 read database which saves data in a more efficient manner for querying the data
 via the HTTP API.
 
+Events in the accumulated event store are *eventually consistent*, in the sense that first
+events are written to the write store, they will be propogated to the read store and only then be 
+visible to the user under the HTTP endpoint.
+
 ### The following are prerequisites to running the application:
 
 1. Scala 2.12
@@ -89,9 +93,8 @@ the **application.conf**, and a restart to the service.
     
 ### To improve:
 
-1. Consider adding stronger back pressure semantics (currently provided by buffering queues in `observeAsync`, maybe an `async.Queue[T]` would help)
-2. HTTP server path docs should be auto generated such that once API evolves, we maintain stable documentation
-3. Event source should be configurable by configuration, such that we can choose at runtime different methods of retrieving JSON data.
-4. Consider having a more strict validation of the process path supplied by the user
+1. HTTP server path docs should be auto generated such that once API evolves, we maintain stable documentation
+2. Event source should be configurable by configuration, such that we can choose at runtime different methods of retrieving JSON data.
+3. Consider having a more strict validation of the process path supplied by the user
     - Currently the program only checks that the path to the file exists, but does not validate the process itself (perhaps MD5?)
-5. Method documentation should be enhanced to generate docs via [tut](https://github.com/tpolecat/tut)
+4. Method documentation should be enhanced to generate docs via [tut](https://github.com/tpolecat/tut)

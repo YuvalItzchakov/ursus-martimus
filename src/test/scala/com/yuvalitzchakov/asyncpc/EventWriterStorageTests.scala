@@ -10,7 +10,7 @@ class EventWriterStorageTests extends UnitSpec {
 
   "EventWriterStorage" must {
     "append each event preserving write order" in {
-      forAll(Gen.containerOf[Vector, Event](Event.evenGen).suchThat(_ != Vector.empty)) { events =>
+      forAll(Gen.containerOf[Vector, Event](Gens.event).suchThat(_ != Vector.empty)) { events =>
         val eventWriter = fixture
 
         events.foreach(event => eventWriter.put(event).unsafeRunSync())

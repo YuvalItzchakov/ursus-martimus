@@ -22,16 +22,4 @@ object EventWriterStorage {
       }
     }
   }
-
-  implicit def readerEventWriterStorage: EventWriterStorage[ReaderT[IO, Ref[IO, Vector[Event]], ?]] =
-    new EventWriterStorage[ReaderT[IO, Ref[IO, Vector[Event]], ?]] {
-      override def put(event: Event): ReaderT[IO, Ref[IO, Vector[Event]], Unit] =
-        ReaderT[IO, Ref[IO, Vector[Event]], Unit] { ref =>
-          ref.update(_ :+ event)
-        }
-
-      override def get: ReaderT[IO, Ref[IO, Vector[Event]], Vector[Event]] = ReaderT { ref =>
-        ref.get
-      }
-    }
 }

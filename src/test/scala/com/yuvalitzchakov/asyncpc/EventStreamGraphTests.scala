@@ -14,11 +14,11 @@ class EventStreamGraphTests extends UnitSpec {
   def eventWriterMockSink: Sink[IO, Event] = _.map(_ => ())
   def eventReaderMockSink: Sink[IO, Event] = _.map(_ => ())
 
-  "Event stream graph" must {
+  "EventStreamGraph" must {
     "produce all events on output" in {
       forAll(
         Gen
-          .listOf[Event](Event.evenGen)) { generatedEvents =>
+          .listOf[Event](Gens.event)) { generatedEvents =>
         val events = fs2.Stream
           .emits(generatedEvents.map(_.asJson.noSpaces))
           .map(event => decode[Event](event))
@@ -30,6 +30,24 @@ class EventStreamGraphTests extends UnitSpec {
           .unsafeRunSync()
 
         events must contain theSameElementsAs generatedEvents
+      }
+    }
+
+    "throw out junk data from event stream without terminating" in {
+      forAll(
+        Gen
+          .listOf[Event](Gens.event)) { generatedEvents =>
+        val events = fs2.Stream
+          .emits(generatedEvents.map(_.asJson.noSpaces) ++ List("{ @#($@#($@#($@", "{ { \"��/���ƛ�K"))
+          .map(event => decode[Event](event))
+          .collect { case Right(event) => event }
+          .observe(eventWriterMockSink)
+          .observe(eventReaderMockSink)
+          .compile
+          .toList
+          .unsafeRunSync()
+
+        events.size mustBe generatedEvents.size
       }
     }
   }

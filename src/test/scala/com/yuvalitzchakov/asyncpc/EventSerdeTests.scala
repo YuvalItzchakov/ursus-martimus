@@ -1,5 +1,6 @@
 package com.yuvalitzchakov.asyncpc
 
+import io.circe.Json
 import io.circe.parser._
 import io.circe.syntax._
 import org.scalacheck.Gen
@@ -10,12 +11,40 @@ import org.scalacheck.Gen
 class EventSerdeTests extends UnitSpec {
   "Event deserializer" must {
     "deserialize valid event type" in {
-      forAll((Event.evenGen, "event")) { expectedEvent =>
+      forAll(Gens.event) { expectedEvent =>
         val eventJson = expectedEvent.asJson.noSpaces
         decode[Event](eventJson) match {
           case Left(error) => fail(s"Deserialization yielded error: $error")
           case Right(actualEvent) => actualEvent mustEqual expectedEvent
         }
+      }
+    }
+
+    "fail deserialization when eventType is null" in {
+      forAll(Gens.event) { expectedEvent =>
+        val eventJson =
+          expectedEvent.asJson.hcursor
+            .downField("event_type")
+            .set(Json.Null)
+            .top
+            .getOrElse(Json.Null)
+            .noSpaces
+
+        decode[Event](eventJson) mustBe an[Left[Error, Event]]
+      }
+    }
+
+    "fail deserialization when data is null" in {
+      forAll(Gens.event) { expectedEvent =>
+        val eventJson =
+          expectedEvent.asJson.hcursor
+            .downField("data")
+            .set(Json.Null)
+            .top
+            .getOrElse(Json.Null)
+            .noSpaces
+
+        decode[Event](eventJson) mustBe an[Left[Error, Event]]
       }
     }
 

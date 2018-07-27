@@ -68,7 +68,7 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-dsl" % Http4sVersion,
   "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
   "com.github.pureconfig" %% "pureconfig" % "0.9.1",
-  "org.scalacheck" %% "scalacheck" % "1.14.0",
-  "org.scalatest" %% "scalatest" % "3.0.5" % Test,
   "org.typelevel" %% "cats-effect" % "1.0.0-RC2",
+  "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+  "org.scalatest" %% "scalatest" % "3.0.5" % Test
 )
