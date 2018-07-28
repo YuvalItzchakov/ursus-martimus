@@ -56,7 +56,7 @@ scalacOptions ++= Seq(
 )
 
 val Http4sVersion = "0.19.0-M1"
-val CirceVersion = "0.9.3"
+val CirceVersion = "0.10.0-M1"
 val Fs2Version = "1.0.0-M1"
 
 libraryDependencies ++= Seq(
