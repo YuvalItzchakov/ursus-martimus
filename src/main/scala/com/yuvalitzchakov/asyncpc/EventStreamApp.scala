@@ -7,12 +7,11 @@ import io.circe.parser._
   * The event data pipeline
   */
 object EventStreamApp {
-  def apply[F[_]](
+  def apply[F[_] : ConcurrentEffect](
       dataGeneratorLocation: String,
       eventStorageConfig: EventStorageConfiguration,
       eventWriterStorage: EventWriterStorage[F],
-      eventReaderStorage: EventReaderStorage[F])(
-      implicit F: ConcurrentEffect[F]): fs2.Stream[F, Event] = {
+      eventReaderStorage: EventReaderStorage[F]): fs2.Stream[F, Event] = {
     EventSource
       .standardInputSource[F](dataGeneratorLocation)
       .map(decode[Event])

@@ -1,7 +1,7 @@
 package com.yuvalitzchakov.asyncpc
-import cats.Functor
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
+import cats.syntax.functor._
 
 /**
   * Reader storage is an abstraction over reading aggregated data over
@@ -32,8 +32,8 @@ trait EventReaderStorage[F[_]] {
 }
 
 object EventReaderStorage {
-  def create[F[_]: Sync](implicit F: Functor[F]): F[EventReaderStorage[F]] = {
-    F.map(Ref.of[F, EventState](EventState(Map.empty, Map.empty))) { ref =>
+  def create[F[_]: Sync]: F[EventReaderStorage[F]] = {
+    Ref.of[F, EventState](EventState(Map.empty, Map.empty)).map { ref =>
       new EventReaderStorage[F] {
         override def put(event: Event): F[Unit] = ref.update { eventState =>
           val eventsByData = eventState.eventsByData
@@ -53,10 +53,11 @@ object EventReaderStorage {
         }
 
         override def getEventCountByData: F[Map[String, Int]] = {
-          F.map(ref.get)(_.eventsByData)
+          ref.get.map(_.eventsByData)
         }
+
         override def getEventCountByType: F[Map[String, Int]] = {
-          F.map(ref.get)(_.eventsByType)
+          ref.get.map(_.eventsByType)
         }
       }
     }
