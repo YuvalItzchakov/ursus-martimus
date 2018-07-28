@@ -47,7 +47,8 @@ object StreamRunner extends StreamApp[IO] {
         .getOrElse(EventStorageConfiguration(2048, 2048))
 
     val httpServerConfig =
-      loadConfig[HttpServerConfiguration].getOrElse(HttpServerConfiguration("0.0.0.0", 8080))
+      loadConfig[HttpServerConfiguration]("http-server")
+        .getOrElse(HttpServerConfiguration("0.0.0.0", 8080))
 
     val eventWriterStorage = EventWriterStorage.create[IO]
     val eventReaderStorage = EventReaderStorage.create[IO]

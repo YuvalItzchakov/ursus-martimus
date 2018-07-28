@@ -23,8 +23,8 @@ class EventsHttpService[F[_]](implicit M: Monad[F], C: ConcurrentEffect[F]) exte
 
       case GET -> Root / "eventsbydata" =>
         Ok {
-          M.map(readerStorage.getEventCountByData) { eventByType =>
-            eventByType
+          M.map(readerStorage.getEventCountByData) { eventsByData =>
+            eventsByData
               .map { case (eventData, count) => s"Event data: $eventData, Count: $count" }
               .mkString("\n")
           }
