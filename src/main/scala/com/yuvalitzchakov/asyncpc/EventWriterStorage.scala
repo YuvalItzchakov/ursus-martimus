@@ -1,9 +1,8 @@
 package com.yuvalitzchakov.asyncpc
 
 import cats.Functor
-import cats.data.ReaderT
+import cats.effect.Sync
 import cats.effect.concurrent.Ref
-import cats.effect.{IO, Sync}
 
 /**
   * Created by Yuval.Itzchakov on 25/07/2018.
