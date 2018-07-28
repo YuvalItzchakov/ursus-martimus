@@ -4,9 +4,6 @@ import cats.Functor
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
 
-/**
-  * Created by Yuval.Itzchakov on 25/07/2018.
-  */
 trait EventWriterStorage[F[_]] {
   def put(event: Event): F[Unit]
   def get: F[Vector[Event]]
